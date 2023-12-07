@@ -23,12 +23,10 @@ var (
 )
 
 func wsEndpoint(w http.ResponseWriter, r *http.Request) {
-	wsUpgrader.CheckOrigin = func(r *http.Request) bool { 
+	wsUpgrader.CheckOrigin = func(r *http.Request) bool {
 		//check http.Request origin
 		//make sure it's ok to access this resource
-
-
-		return true 
+		return true
 	}
 
 	wsConnections, err := wsUpgrader.Upgrade(w, r, nil)
