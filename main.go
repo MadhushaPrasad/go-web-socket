@@ -28,7 +28,30 @@ func wsEndpoint(w http.ResponseWriter, r *http.Request) {
 		//make sure it's ok to access this resource
 
 
-		return true }
+		return true 
+	}
+
+	wsConnections, err := wsUpgrader.Upgrade(w, r, nil)
+
+	if err != nil {
+		fmt.Println("Could not upgrade connection to websocket", err.Error())
+		return
+	}
+
+	defer wsConnections.Close()
+
+	// event loop
+	for {
+		var message Message
+
+		err := wsConnections.ReadJSON(&message)
+		if err != nil {
+			fmt.Println("Error reading json.", err.Error())
+			continue
+		}
+
+		fmt.Println("Message received: ", message.Greeting)
+	}
 }
 
 func main() {
