@@ -2,60 +2,56 @@ package main
 
 import (
 	"fmt"
+	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-
-	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 )
 
-type Message struct {
-	Greeting string `json:"greeting"`
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
 }
 
-var (
-	wsUpgrader = websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-	}
+func homePage(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Home Page")
+}
 
-	wsConnections *websocket.Conn
-)
+func reader(conn *websocket.Conn) {
+	for {
+		messageType, p, err := conn.ReadMessage()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		log.Println(string(p))
+		if err = conn.WriteMessage(messageType, p); err != nil {
+			log.Println(err)
+			return
+		}
+	}
+}
 
 func wsEndpoint(w http.ResponseWriter, r *http.Request) {
-	wsUpgrader.CheckOrigin = func(r *http.Request) bool {
-		//check http.Request origin
-		//make sure it's ok to access this resource
-		return true
-	}
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 
-	wsConnections, err := wsUpgrader.Upgrade(w, r, nil)
+	ws, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
-		fmt.Println("Could not upgrade connection to websocket", err.Error())
-		return
+		log.Println(err)
 	}
 
-	defer wsConnections.Close()
+	log.Println("Client Successfully Connected...")
 
-	// event loop
-	for {
-		var message Message
+	reader(ws)
+}
 
-		err := wsConnections.ReadJSON(&message)
-		if err != nil {
-			fmt.Println("Error reading json.", err.Error())
-			continue
-		}
-
-		fmt.Println("Message received: ", message.Greeting)
-	}
+func setupRoutes() {
+	http.HandleFunc("/", homePage)
+	http.HandleFunc("/ws", wsEndpoint)
 }
 
 func main() {
-	fmt.Println("Hello, world.")
-
-	router := mux.NewRouter()
-	log.Fatal(http.ListenAndServe(":8000", router))
-
+	fmt.Println("Go WebSockets")
+	setupRoutes()
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
