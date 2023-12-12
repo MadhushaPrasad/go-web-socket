@@ -34,12 +34,13 @@ func reader(conn *websocket.Conn) { // read data from client
 }
 
 func wsEndpoint(w http.ResponseWriter, r *http.Request) { //websocket endpoint
-	upgrader.CheckOrigin = func(r *http.Request) bool { return true } // allow all connections ( cross origin access )
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true } // allow all connections ( cross-origin access )
 
 	ws, err := upgrader.Upgrade(w, r, nil) // upgrade connection to websocket
 
 	if err != nil { // check if error
 		log.Println(err) // log error / print error
+		return
 	}
 
 	log.Println("Client Successfully Connected...") // log message
